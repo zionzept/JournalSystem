@@ -14,7 +14,7 @@ public class Journal {
 		this.patient = patient;
 		this.doctor = doctor;
 		this.nurse = nurse;
-		this. division = division;
+		this.division = division;
 		this.data = data;
 	}
 	/**
@@ -23,7 +23,7 @@ public class Journal {
 	public Journal(String patient, String doctor, String division, String data) {
 		this.patient = patient;
 		this.doctor = doctor;
-		this. division = division;
+		this.division = division;
 		this.data = data;
 	}
 
