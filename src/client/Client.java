@@ -1,7 +1,11 @@
+package client;
 import java.net.*;
 import java.io.*;
 import javax.net.ssl.*;
 import javax.security.cert.X509Certificate;
+
+import data.Journal;
+
 import java.security.KeyStore;
 import java.security.cert.*;
 import java.math.BigInteger;
@@ -14,7 +18,7 @@ import java.math.BigInteger;
  * The application can be modified to connect to a server outside
  * the firewall by following SSLSocketClientWithTunneling.java.
  */
-public class client {
+public class Client {
 
     public static void main(String[] args) throws Exception {
         String host = null;
