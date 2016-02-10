@@ -97,7 +97,23 @@ public class client {
             socket.close();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }             
     }
-
+    public Journal read(){
+		
+    	return null;	
+    }
+    
+    public Journal write(){
+		
+    	return null;
+    }
+    
+    public void add(){
+    	
+    }
+    
+    public void delete(){
+    	
+    }
 }
