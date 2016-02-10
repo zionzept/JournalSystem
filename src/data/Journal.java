@@ -1,53 +1,69 @@
 package data;
 
 public class Journal {
-	private String Patient;
-	private String Doctor;
-	private String Nurse;
-	private String Division;
-	private String Data;
+	private String patient;
+	private String doctor;
+	private String nurse;
+	private String division;
+	private String data;
 
-	public Journal() {
-
+	/**
+	 * Create a new Journal.
+	 */
+	public Journal(String patient, String doctor, String nurse, String division, String data) {
+		this.patient = patient;
+		this.doctor = doctor;
+		this.nurse = nurse;
+		this. division = division;
+		this.data = data;
+	}
+	/**
+	 * Create a new Journal without a nurse.
+	 */
+	public Journal(String patient, String doctor, String division, String data) {
+		this.patient = patient;
+		this.doctor = doctor;
+		this. division = division;
+		this.data = data;
 	}
 
-	public void setPatient(String Patient) {
-		Patient = Patient;
+	public void setPatient(String patient) {
+		this.patient = patient;
 	}
 
-//	public void setDoctor() {
-//		return Data;
-//	}
-//
-//	public void setNurse() {
-//		return Data;
-//	}
-//
-//	public void setDivision() {
-//		return Data;
-//	}
-//
-//	public void setData() {
-//		return Data;
-//	}
+	public void setDoctor(String doctor) {
+		this.doctor = doctor;
+	}
+
+	public void setNurse(String nurse) {
+		this.nurse = nurse;
+	}
+
+	public void setDivision(String division) {
+		this.division = division;
+	}
+
+	public void setData(String data) {
+		this.data = data;
+	}
 	
 	public String setPatient() {
-		return Data;
+		return patient;
 	}
 
 	public String getDoctor() {
-		return Data;
+		return doctor;
 	}
 
 	public String getNurse() {
-		return Data;
+		return nurse;
 	}
 
 	public String getDivision() {
-		return Data;
+		return division;
 	}
 
 	public String getData() {
-		return Data;
+		return data;
 	}
 }
