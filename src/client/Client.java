@@ -23,18 +23,24 @@ public class Client {
     public static void main(String[] args) throws Exception {
         String host = null;
         int port = -1;
+        String command = "";
+        String commandArg = "";
+        String keystore = "";
         for (int i = 0; i < args.length; i++) {
             System.out.println("args[" + i + "] = " + args[i]);
         }
-        if (args.length < 2) {
+        if (args.length < 5) {
             System.out.println("USAGE: java client host port");
             System.exit(-1);
         }
         try { /* get input parameters */
             host = args[0];
             port = Integer.parseInt(args[1]);
+            command = args[2];
+            commandArg = args[3];
+            keystore = args[4];
         } catch (IllegalArgumentException e) {
-            System.out.println("USAGE: java client host port");
+            System.out.println("USAGE: java client host port command commandarg username");
             System.exit(-1);
         }
 
@@ -47,7 +53,7 @@ public class Client {
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
                 SSLContext ctx = SSLContext.getInstance("TLS");
-                ks.load(new FileInputStream("clientkeystore"), password);  // keystore password (storepass)
+                ks.load(new FileInputStream(keystore), password);  // keystore password (storepass)
 				ts.load(new FileInputStream("clienttruststore"), password); // truststore password (storepass);
 				kmf.init(ks, password); // user password (keypass)
 				tmf.init(ts); // keystore can be used as truststore here
@@ -81,20 +87,39 @@ public class Client {
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String msg;
-			for (;;) {
-                System.out.print(">");
-                msg = read.readLine();
-                if (msg.equalsIgnoreCase("quit")) {
-				    break;
-				}
-                System.out.print("sending '" + msg + "' to server...");
-                out.println(msg);
-                out.flush();
-                System.out.println("done");
-
-                System.out.println("received '" + in.readLine() + "' from server\n");
+            
+            switch (command) {
+            case "add":
+            	add(commandArg, out);
+            	break;
+            case "delete":
+            	delete(commandArg, out);
+            	break;
+            	
+            case "read":
+            	read(commandArg, out);
+            	break;
+            	
+            case "write":
+            	write(commandArg, out);
+            	break;
             }
+            	
+            
+//          String msg;
+//			for (;;) {
+//                System.out.print(">");
+//                msg = read.readLine();
+//                if (msg.equalsIgnoreCase("quit")) {
+//				    break;
+//				}
+//                System.out.print("sending '" + msg + "' to server...");
+//                out.println(msg);
+//                out.flush();
+//                System.out.println("done");
+//
+//                System.out.println("received '" + in.readLine() + "' from server\n");
+//            }
             in.close();
 			out.close();
 			read.close();
@@ -103,21 +128,31 @@ public class Client {
             e.printStackTrace();
         }             
     }
-    public Journal read(){
-		
-    	return null;	
+    private static void read(String patient, PrintWriter out){
+		out.println("read " + patient);
+		//in.readObject();
+		//journal.display();
     }
     
-    public Journal write(){
-		
-    	return null;
+    private static void write(String patient, PrintWriter out){
+    	out.println("write " + patient);
+    	//Journal journal = (Journal)in.readObject();
+    	//journal.display();
+    	//out.sendObject(journal)
     }
     
-    public void add(){
-    	
+    private static void add(String patient, PrintWriter out){
+    	//Journal journal = new Journal(patient, patient, patient, patient);
+    	//journal.display();
+    	out.println("add " + patient);
+    	//out.printobject(journal);
     }
     
-    public void delete(){
+    private static void delete(String patient, PrintWriter out){
+    	out.println("delete " + patient);
+    }
+    
+    private static void display(Journal journal, boolean editable) {
     	
     }
 }
