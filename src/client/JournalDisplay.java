@@ -1,8 +1,12 @@
 package client;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -35,8 +39,8 @@ public class JournalDisplay extends JFrame{
 		doctorTextArea = new JTextArea();
 		patientTextArea = new JTextArea();
 		nurseTextArea = new JTextArea();
-		confirmButton = new JButton();
-		cancelButton = new JButton();
+		confirmButton = new JButton("Confirm");
+		cancelButton = new JButton("Cancel");
 		
 		
 		this.setLayout(new BorderLayout());
@@ -48,6 +52,18 @@ public class JournalDisplay extends JFrame{
 		doctorTextArea.setEditable(editable);
 		patientTextArea.setEditable(editable);
 		nurseTextArea.setEditable(editable);
+		
+		dataTextArea.setBorder(BorderFactory.createLineBorder(Color.black));
+		divisionTextArea.setBorder(BorderFactory.createLineBorder(Color.black));
+		doctorTextArea.setBorder(BorderFactory.createLineBorder(Color.black));
+		patientTextArea.setBorder(BorderFactory.createLineBorder(Color.black));
+		nurseTextArea.setBorder(BorderFactory.createLineBorder(Color.black));
+		
+		confirmButton.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e) {
+				saveJournal();
+			}
+		});
 		
 		nameGrid.add(patientTextArea);
 		nameGrid.add(doctorTextArea);
@@ -66,8 +82,17 @@ public class JournalDisplay extends JFrame{
 		dataTextArea.setText(this.journal.getData());
 		patientTextArea.setText(this.journal.getPatient());
 		nurseTextArea.setText(this.journal.getNurse());
-		
+
+		this.setSize(600, 600);
 		this.setVisible(true);
-		this.pack();
+	}
+	
+	private void saveJournal() {
+		journal.setData(dataTextArea.getText());
+		journal.setDoctor(doctorTextArea.getText());
+		journal.setPatient(patientTextArea.getText());
+		journal.setNurse(nurseTextArea.getText());
+		journal.setDivision(divisionTextArea.getText());
+		
 	}
 }
