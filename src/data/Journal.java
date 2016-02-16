@@ -66,4 +66,8 @@ public class Journal {
 	public String getData() {
 		return data;
 	}
+	
+	public String getPatient(){
+		return patient;
+	}
 }
