@@ -70,4 +70,9 @@ public class Journal {
 	public String getPatient(){
 		return patient;
 	}
+	
+	public String toString(){
+		return "Journal for " + patient + ".";
+		
+	}
 }
