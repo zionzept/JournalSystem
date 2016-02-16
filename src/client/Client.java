@@ -137,13 +137,15 @@ public class Client {
     private static void write(String patient, PrintWriter out){
     	out.println("write " + patient);
     	//Journal journal = (Journal)in.readObject();
-    	//journal.display();
+    	//GUICreatorThread guict = new GUICreatorThread(journal, true);
+    	//guict.start();
     	//out.sendObject(journal)
     }
     
     private static void add(String patient, PrintWriter out){
     	//Journal journal = new Journal(patient, patient, patient, patient);
-    	//journal.display();
+    	//GUICreatorThread guict = new GUICreatorThread(journal, true);
+    	//guict.start();
     	out.println("add " + patient);
     	//out.printobject(journal);
     }
@@ -152,7 +154,4 @@ public class Client {
     	out.println("delete " + patient);
     }
     
-    private static void display(Journal journal, boolean editable) {
-    	
-    }
 }

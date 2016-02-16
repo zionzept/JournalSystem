@@ -23,6 +23,7 @@ public class JournalDisplay extends JFrame{
 	private JButton confirmButton;
 	private JButton cancelButton;
 	private Journal journal;
+	private boolean done;
 	
 	
 	/**
@@ -33,6 +34,7 @@ public class JournalDisplay extends JFrame{
 	 */
 	public JournalDisplay(Journal journal, boolean editable) {
 		this.journal = journal;
+		done = false;
 		
 		dataTextArea = new JTextArea();
 		divisionTextArea = new JTextArea();
@@ -87,12 +89,24 @@ public class JournalDisplay extends JFrame{
 		this.setVisible(true);
 	}
 	
+	public synchronized void waitForDone() {
+		while(!done) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	private void saveJournal() {
 		journal.setData(dataTextArea.getText());
 		journal.setDoctor(doctorTextArea.getText());
 		journal.setPatient(patientTextArea.getText());
 		journal.setNurse(nurseTextArea.getText());
 		journal.setDivision(divisionTextArea.getText());
+		done = true;
+		notifyAll();
 		
 	}
 }
