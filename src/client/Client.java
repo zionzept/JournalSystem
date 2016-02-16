@@ -139,6 +139,7 @@ public class Client {
     	//Journal journal = (Journal)in.readObject();
     	//GUICreatorThread guict = new GUICreatorThread(journal, true);
     	//guict.start();
+    	//guict.join();
     	//out.sendObject(journal)
     }
     
@@ -146,6 +147,7 @@ public class Client {
     	//Journal journal = new Journal(patient, patient, patient, patient);
     	//GUICreatorThread guict = new GUICreatorThread(journal, true);
     	//guict.start();
+    	//guict.join();
     	out.println("add " + patient);
     	//out.printobject(journal);
     }

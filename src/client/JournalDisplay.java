@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -85,6 +86,7 @@ public class JournalDisplay extends JFrame{
 		patientTextArea.setText(this.journal.getPatient());
 		nurseTextArea.setText(this.journal.getNurse());
 
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setSize(600, 600);
 		this.setVisible(true);
 	}
@@ -99,7 +101,7 @@ public class JournalDisplay extends JFrame{
 		}
 	}
 	
-	private void saveJournal() {
+	private synchronized void saveJournal() {
 		journal.setData(dataTextArea.getText());
 		journal.setDoctor(doctorTextArea.getText());
 		journal.setPatient(patientTextArea.getText());
@@ -107,6 +109,6 @@ public class JournalDisplay extends JFrame{
 		journal.setDivision(divisionTextArea.getText());
 		done = true;
 		notifyAll();
-		
+		this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 }
