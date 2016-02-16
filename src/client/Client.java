@@ -4,6 +4,10 @@ import java.net.*;
 import java.io.*;
 import javax.net.ssl.*;
 import javax.security.cert.X509Certificate;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 
 import data.Journal;
 
@@ -51,19 +55,20 @@ public class Client {
 		try { /* set up a key manager for client authentication */
 			SSLSocketFactory factory = null;
 			try {
-				char[] password = "password".toCharArray();
+				char[] trustStorePassword = "password".toCharArray();
+				char[] keyStorePassword = passPrompt();
 				KeyStore ks = KeyStore.getInstance("JKS");
 				KeyStore ts = KeyStore.getInstance("JKS");
 				KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 				SSLContext ctx = SSLContext.getInstance("TLS");
-				ks.load(new FileInputStream(keystore), password); // keystore
+				ks.load(new FileInputStream(keystore), keyStorePassword); // keystore
 																	// password
 																	// (storepass)
-				ts.load(new FileInputStream("clienttruststore"), password); // truststore
+				ts.load(new FileInputStream("clienttruststore"), trustStorePassword); // truststore
 																			// password
 																			// (storepass);
-				kmf.init(ks, password); // user password (keypass)
+				kmf.init(ks, keyStorePassword); // user password (keypass)
 				tmf.init(ts); // keystore can be used as truststore here
 				ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 				factory = ctx.getSocketFactory();
@@ -93,7 +98,6 @@ public class Client {
 			System.out.println("socket after handshake:\n" + socket + "\n");
 			System.out.println("secure connection established\n\n");
 
-			BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 			in = new ObjectInputStream(socket.getInputStream());
 
@@ -113,25 +117,9 @@ public class Client {
 				write(commandArg, out);
 				break;
 			}
-
-			// String msg;
-			// for (;;) {
-			// System.out.print(">");
-			// msg = read.readLine();
-			// if (msg.equalsIgnoreCase("quit")) {
-			// break;
-			// }
-			// System.out.print("sending '" + msg + "' to server...");
-			// out.println(msg);
-			// out.flush();
-			// System.out.println("done");
-			//
-			// System.out.println("received '" + in.readLine() + "' from
-			// server\n");
-			// }
 			in.close();
+			out.flush();
 			out.close();
-			read.close();
 			socket.close();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -184,11 +172,10 @@ public class Client {
 	}
 
 	private static void add(String patient, ObjectOutputStream out) {
-		Journal journal = new Journal(patient, patient, patient, patient);
+		Journal journal = new Journal("<patient>", "<doctor>", "<nurse>", "<division>", "<data>");
 		displayJournal(journal, true);
 		try {
 			out.writeObject("add");
-			out.writeObject(patient);
 			out.writeObject(journal);
 			String answer = in.readUTF();
 			System.out.println(answer);
@@ -215,6 +202,25 @@ public class Client {
 			guict.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private static char[] passPrompt(){
+		JPanel panel = new JPanel();
+		JLabel label = new JLabel("Enter a password:");
+		JPasswordField pass = new JPasswordField();
+		panel.add(label);
+		panel.add(pass);
+		String[] options = new String[]{"OK", "Cancel"};
+		int option = JOptionPane.showOptionDialog(null, panel, "The title",
+		                         JOptionPane.NO_OPTION, JOptionPane.PLAIN_MESSAGE,
+		                         null, options, options[1]);
+		if(option == 0) // pressing OK button
+		{
+		    char[] password = pass.getPassword();
+		    return password;
+		}else{
+			return new char[0];
 		}
 	}
 
