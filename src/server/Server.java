@@ -1,11 +1,10 @@
 package server;
-import java.io.BufferedReader;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.security.KeyStore;
@@ -29,9 +28,8 @@ import javax.security.cert.X509Certificate;
 import data.Journal;
 
 public class Server implements Runnable {
-	private static final String logPath = "H:\\";
-	private static final Logger logger = Logger.getLogger( Server.class.getName() );
 	static FileHandler fh;
+	private static Logger logger;
     private ServerSocket serverSocket = null;
     private static int numConnectedClients = 0;
     HashMap<String, Journal> journals = new HashMap<String, Journal>();
@@ -48,13 +46,13 @@ public class Server implements Runnable {
             SSLSession session = socket.getSession();
             X509Certificate cert = (X509Certificate)session.getPeerCertificateChain()[0];
             String subject = cert.getSubjectDN().getName();
-	    String issuer = cert.getIssuerDN().getName();
-	    BigInteger serialNo = cert.getSerialNumber();
+            String issuer = cert.getIssuerDN().getName();
+            BigInteger serialNo = cert.getSerialNumber();
     	    numConnectedClients++;
             System.out.println("client connected");
             System.out.println("client name (cert subject DN field): " + subject);
-	    System.out.println("issuer name:\n" + issuer+ "\n");
-	    System.out.println("serial number:\n" + serialNo.toString());
+            System.out.println("issuer name:\n" + issuer+ "\n");
+            System.out.println("serial number:\n" + serialNo.toString());
             System.out.println(numConnectedClients + " concurrent connection(s)\n");
 
             ObjectOutputStream out = null;
@@ -249,10 +247,16 @@ public class Server implements Runnable {
     
     // Sets up logger to write to file. A new file will be made for each day.
     private static void setupLogger() {
+    		logger = Logger.getLogger( Server.class.getName() );
+    	    File file = new File("Logs");
+    	    if (!file.exists()) {
+    	    	System.out.println("nodir");
+    	    	file.mkdir();
+    	    }
+    	    String filepath = file + File.separator + "Server_";
 	        SimpleDateFormat format = new SimpleDateFormat("MM-dd");
 	        try {new FileHandler();   
-	            fh = new FileHandler(logPath + "Server_"
-	                + format.format(Calendar.getInstance().getTime()) + ".log", true);
+	            fh = new FileHandler(filepath + format.format(Calendar.getInstance().getTime()) + ".log", true);
 	        } catch (Exception e) {
 	            e.printStackTrace();
 	        }
