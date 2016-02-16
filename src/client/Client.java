@@ -18,8 +18,13 @@ import java.math.BigInteger;
  * The application can be modified to connect to a server outside
  * the firewall by following SSLSocketClientWithTunneling.java.
  */
-public class Client {
 
+
+
+public class Client {
+	
+	private static ObjectInputStream in;
+	
     public static void main(String[] args) throws Exception {
         String host = null;
         int port = -1;
@@ -86,7 +91,8 @@ public class Client {
 
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            in = new ObjectInputStream(socket.getInputStream());
+            
             
             switch (command) {
             case "add":
@@ -130,30 +136,55 @@ public class Client {
     }
     private static void read(String patient, PrintWriter out){
 		out.println("read " + patient);
-		//in.readObject();
-		//journal.display();
+		Journal journal = null;
+		try {
+			journal = (Journal)in.readObject();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if(journal != null) {
+			displayJournal(journal, false);
+		} else {
+			System.out.println("Did not recieve a journal from server");
+		}
+		
     }
     
     private static void write(String patient, PrintWriter out){
     	out.println("write " + patient);
-    	//Journal journal = (Journal)in.readObject();
-    	//GUICreatorThread guict = new GUICreatorThread(journal, true);
-    	//guict.start();
-    	//guict.join();
-    	//out.sendObject(journal)
+    	Journal journal = null;
+		try {
+			journal = (Journal)in.readObject();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if(journal != null) {
+			displayJournal(journal, true);
+	    	out.println(journal);
+		} else {
+			System.out.println("Did not recieve a journal from server");
+		}
     }
     
     private static void add(String patient, PrintWriter out){
-    	//Journal journal = new Journal(patient, patient, patient, patient);
-    	//GUICreatorThread guict = new GUICreatorThread(journal, true);
-    	//guict.start();
-    	//guict.join();
+    	Journal journal = new Journal(patient, patient, patient, patient);
+    	displayJournal(journal, true);
     	out.println("add " + patient);
-    	//out.printobject(journal);
+    	out.println(journal);
     }
     
     private static void delete(String patient, PrintWriter out){
     	out.println("delete " + patient);
+    }
+    
+    private static void displayJournal(Journal journal, boolean editable) {
+    	GUICreatorThread guict = new GUICreatorThread(journal, editable);
+    	guict.start();
+    	try {
+			guict.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
     }
     
 }
