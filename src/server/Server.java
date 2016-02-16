@@ -63,8 +63,6 @@ public class Server implements Runnable {
             in = (ObjectInputStream)(socket.getInputStream());
             
             communication(out, in);
-            
-            
 
 			in.close();
 			out.close();
@@ -129,7 +127,6 @@ public class Server implements Runnable {
     
     private void communication(ObjectOutputStream out, ObjectInputStream in) {
     	Object msg;
-    	Journal journal;
     	while (true) {
 	    	msg = receive(in);
 	    	if (!(msg instanceof String)) {
@@ -138,73 +135,16 @@ public class Server implements Runnable {
 	    	}
 	    	switch ((String)msg) {
 	    	case "read":	//Patient: Own, Nurse: Own and division, Doctor: Own and division, Government agency: all
-	    		msg = receive(in);
-	    		if (!(msg instanceof String)) {
-	    			send(out, "failed");
-	    			continue;
-		    	}
-	    		//TODO: check access rights
-	    		journal = journals.get(msg);
-	    		if (journal == null) {
-	    			send(out, "failed");
-	    			continue;
-	    		}
-	    		logger.info("Read " + journal.toString());
-	    		send(out, journal);
+	    		read(out, in, msg);
 	    		break;
 	    	case "write":	//Nurse: Own, Doctor: Own
-	    		msg = receive(in);
-	    		if (!(msg instanceof String)) {
-	    			send(out, "failed");
-	    			continue;
-		    	}
-	    		//TODO: check access rights
-	    		journal = journals.get(msg);
-	    		if (journal == null) {
-	    			send(out, "failed");
-	    			continue;
-	    		}
-	    		send(out, journal);
-	    		msg = receive(in);
-	    		if (!(msg instanceof Journal)) {
-	    			send(out, "failed");
-	    			continue;
-	    		}
-	    		journals.put(journal.getPatient(), journal);
-	    		logger.info("Write " + journal.toString());
-	    		send(out, "confirmed");
+	    		write(out, in, msg);
 	    		break;
 	    	case "add":		//Doctor only
-	    		msg = receive(in);
-	    		if (!(msg instanceof Journal)) {
-	    			send(out, "failed");
-	    			continue;
-		    	}
-	    		//TODO: check access rights 
-	    		journal = (Journal)msg;
-	    		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
-	    			send(out, "failed");
-	    			continue;
-	    		}
-	    		journals.put(journal.getPatient(), journal);
-	    		logger.info("Added " + journal.toString());
-	    		send(out, "access granted");
+	    		add(out, in, msg);
 	    		break;
 	    	case "delete":	//Government agency: all
-	    		msg = receive(in);
-	    		if (!(msg instanceof String)) {
-	    			send(out, "failed");
-	    			continue;
-		    	}
-	    		//TODO: check access rights 
-	    		journal = journals.get(msg);
-	    		if (journal == null) {	//cannot delete what isn't there
-	    			send(out, "failed");
-	    			continue;
-	    		}
-	    		journals.remove(journal);
-	    		logger.info("Removed " + journal.toString());
-	    		send(out, "access granted");
+	    		delete(out, in, msg);
 	    		break;
 	    	default:
 	    		send(out, "failed");
@@ -213,25 +153,80 @@ public class Server implements Runnable {
     	}
     }
     
-//    read: 
-//    	client: “read” <patientnamn> 
-//    	server: <Journal>/”access denied”
-//
-//    	write:
-//    	client: “write” <patientnamn> 
-//    	server: <Journal>/”access denied”
-//    	client: <Journal>
-//    	server: “confirmed”/”failed”
-//
-//    	add:
-//    	client: “add” <Journal> 
-//    	server: “access granted”/”access denied”
-//
-//
-//    	delete:
-//    	client: “delete” <patientnamn> 
-//    	server: “access granted”/”access denied”
 
+   
+    private void read(ObjectOutputStream out, ObjectInputStream in, Object msg){
+    	msg = receive(in);
+		if (!(msg instanceof String)) {
+			send(out, "failed");
+			return;
+    	}
+		//TODO: check access rights
+		Journal journal = journals.get(msg);
+		if (journal == null) {
+			send(out, "failed");
+			return;
+		}
+		logger.info("Read " + journal.toString());
+		send(out, journal);
+    }
+    
+	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg){
+		msg = receive(in);
+		if (!(msg instanceof String)) {
+			send(out, "failed");
+			return;
+    	}
+		//TODO: check access rights
+		Journal journal = journals.get(msg);
+		if (journal == null) {
+			send(out, "failed");
+			return;
+		}
+		send(out, journal);
+		msg = receive(in);
+		if (!(msg instanceof Journal)) {
+			send(out, "failed");
+			return;
+		}
+		journals.put(journal.getPatient(), journal);
+		logger.info("Write " + journal.toString());
+		send(out, "confirmed");
+	}
+	
+	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg){
+		msg = receive(in);
+		if (!(msg instanceof Journal)) {
+			send(out, "failed");
+			return;
+    	}
+		//TODO: check access rights 
+		Journal journal = (Journal)msg;
+		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
+			send(out, "failed");
+			return;
+		}
+		journals.put(journal.getPatient(), journal);
+		logger.info("Added " + journal.toString());
+		send(out, "access granted");
+	}
+	
+	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg){
+		msg = receive(in);
+		if (!(msg instanceof String)) {
+			send(out, "failed");
+			return;
+    	}
+		//TODO: check access rights 
+		Journal journal = journals.get(msg);
+		if (journal == null) {	//cannot delete what isn't there
+			send(out, "failed");
+			return;
+		}
+		journals.remove(journal);
+		logger.info("Removed " + journal.toString());
+		send(out, "access granted");
+	}
     
 	private Object receive(ObjectInputStream in){
 		Object msg = null;
