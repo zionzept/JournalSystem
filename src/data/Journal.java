@@ -1,6 +1,10 @@
 package data;
 
-public class Journal {
+public class Journal implements java.io.Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String patient;
 	private String doctor;
 	private String nurse;

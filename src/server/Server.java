@@ -62,8 +62,8 @@ public class Server implements Runnable {
 
             ObjectOutputStream out = null;
             ObjectInputStream in = null;
-            out = (ObjectOutputStream)(socket.getOutputStream());
-            in = (ObjectInputStream)(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
             
             communication(out, in, suuu);
 

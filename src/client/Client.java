@@ -64,7 +64,7 @@ public class Client {
 				KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 				SSLContext ctx = SSLContext.getInstance("TLS");
-				ks.load(new FileInputStream(keystore), keyStorePassword); // keystore
+				ks.load(new FileInputStream(certFolderPath + keystore), keyStorePassword); // keystore
 																	// password
 																	// (storepass)
 				ts.load(new FileInputStream(certFolderPath + "clienttruststore"), trustStorePassword); // truststore
@@ -180,9 +180,12 @@ public class Client {
 		try {
 			out.writeObject("add");
 			out.writeObject(journal);
-			String answer = in.readUTF();
+			String answer = (String) in.readObject();
 			System.out.println(answer);
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -211,14 +214,14 @@ public class Client {
 	private static char[] passPrompt(){
 		JPanel panel = new JPanel();
 		JLabel label = new JLabel("Enter a password:");
-		JPasswordField pass = new JPasswordField();
+		JPasswordField pass = new JPasswordField(10);
 		panel.add(label);
 		panel.add(pass);
-		String[] options = new String[]{"OK", "Cancel"};
+		String[] options = new String[]{"OK"};
 		int option = JOptionPane.showOptionDialog(null, panel, "The title",
 		                         JOptionPane.NO_OPTION, JOptionPane.PLAIN_MESSAGE,
-		                         null, options, options[1]);
-		if(option == 0) // pressing OK button
+		                         null, options, pass);
+		if(option != JOptionPane.CLOSED_OPTION) // pressing OK button
 		{
 		    char[] password = pass.getPassword();
 		    return password;
