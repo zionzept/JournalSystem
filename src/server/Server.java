@@ -25,23 +25,31 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.cert.X509Certificate;
 
+import java.util.concurrent.Semaphore;
+
 import data.Journal;
 
 public class Server implements Runnable {
 	private static HashMap<String, Journal> journals = new HashMap<String, Journal>();
+	private static Semaphore connectSem;
 	private static ServerSocket serverSocket = null;
 	private static FileHandler fh;
 	private static Logger logger;
     private static int numConnectedClients = 0;
+    private static final int MAX_NBR_CONNECTIONS = 1;
     private static String certFolderPath = "Certificates" + File.separator + "Server" + File.separator;
 
     public Server(ServerSocket ss) throws IOException {
         serverSocket = ss;
+        connectSem = new Semaphore(MAX_NBR_CONNECTIONS);
         newListener();
     }
     
     public void run() {
         try {
+        	System.out.println(connectSem.toString());
+        	connectSem.acquire();
+        	System.out.println(connectSem.toString());
             SSLSocket socket=(SSLSocket)serverSocket.accept();
             newListener();
             SSLSession session = socket.getSession();
@@ -71,13 +79,17 @@ public class Server implements Runnable {
 			out.close();
 			socket.close();
     	    numConnectedClients--;
+    	    connectSem.release();
             System.out.println("client disconnected");
             System.out.println(numConnectedClients + " concurrent connection(s)\n");
 		} catch (IOException e) {
             System.out.println("Client died: " + e.getMessage());
             e.printStackTrace();
             return;
-        }
+        } catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     private void newListener() { (new Thread(this)).start(); } // calls run()
