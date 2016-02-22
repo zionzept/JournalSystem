@@ -36,7 +36,7 @@ public class Server implements Runnable {
 	private static FileHandler fh;
 	private static Logger logger;
     private static int numConnectedClients = 0;
-    private static final int MAX_NBR_CONNECTIONS = 1;
+    private static final int MAX_NBR_CONNECTIONS = 10;
     private static String certFolderPath = "Certificates" + File.separator + "Server" + File.separator;
 
     public Server(ServerSocket ss) throws IOException {
@@ -47,9 +47,7 @@ public class Server implements Runnable {
     
     public void run() {
         try {
-        	System.out.println(connectSem.toString());
         	connectSem.acquire();
-        	System.out.println(connectSem.toString());
             SSLSocket socket=(SSLSocket)serverSocket.accept();
             newListener();
             SSLSession session = socket.getSession();
