@@ -27,6 +27,7 @@ import javax.security.cert.X509Certificate;
 
 import java.util.concurrent.Semaphore;
 
+import data.Hasher;
 import data.Journal;
 
 public class Server implements Runnable {
@@ -37,6 +38,7 @@ public class Server implements Runnable {
 	private static Logger logger;
     private static int numConnectedClients = 0;
     private static final int MAX_NBR_CONNECTIONS = 10;
+    private static final String TRUSTSTORE_SHA256 = "e6438b093f45db2de16398a8653cd947e96cce0db8e983573a9d85592e8101c3";
     private static String certFolderPath = "Certificates" + File.separator + "Server" + File.separator;
 
     public Server(ServerSocket ss) throws IOException {
@@ -98,6 +100,12 @@ public class Server implements Runnable {
         if (args.length >= 1) {
             port = Integer.parseInt(args[0]);
         }
+        
+        if (!Hasher.hashFile(certFolderPath + "servertruststore").equals(TRUSTSTORE_SHA256)) {
+        	System.out.println("[WARNING] Truststore is corrupt or has been tampered with!");
+			System.exit(-1);
+        }
+        
         String type = "TLS";
         try {
             ServerSocketFactory ssf = getServerSocketFactory(type);
