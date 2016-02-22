@@ -129,12 +129,10 @@ public class Server implements Runnable {
     
     private void communication(ObjectOutputStream out, ObjectInputStream in, Subject subject) {
     	Object msg;
-    	while (true) {
 	    	msg = receive(in);
 	    	if (!(msg instanceof String)) {
 	    		send(out, "failed");
-	    		continue;
-	    	}
+	    	}else{
 	    	switch ((String)msg) {
 	    	case "read":	//Patient: Own, Nurse: Own and division, Doctor: Own and division, Government agency: all
 	    		read(out, in, msg, subject);
@@ -150,9 +148,9 @@ public class Server implements Runnable {
 	    		break;
 	    	default:
 	    		send(out, "failed");
-	    		continue;
+	    		break;
 	    	}
-    	}
+	    }
     }
     
 
@@ -169,6 +167,7 @@ public class Server implements Runnable {
 				|| subject.getProperty("O").equals("doctor") && subject.getProperty("OU").equals(journal.getDivision())
 				|| subject.getProperty("O").equals("government"))) {
 			send(out, "access denied");
+			return;
 		}
 		//TODO: check access rights
 		if (journal == null) {
@@ -189,6 +188,7 @@ public class Server implements Runnable {
 		if (!(subject.getProperty("O").equals("nurse") && subject.getProperty("CN").equals(journal.getNurse())
 				|| subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
 			send(out, "access denied");
+			return;
 		}
 		if (journal == null) {
 			send(out, "failed");
@@ -214,6 +214,7 @@ public class Server implements Runnable {
 		Journal journal = (Journal)msg;
 		if (!(subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
 			send(out, "access denied");
+			return;
 		}
 		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
 			send(out, "failed");
@@ -233,6 +234,7 @@ public class Server implements Runnable {
 		Journal journal = journals.get(msg);
 		if (!(subject.getProperty("O").equals("government"))) {
 			send(out, "access denied");
+			return;
 		}
 		if (journal == null) {	//cannot delete what isn't there
 			send(out, "failed");

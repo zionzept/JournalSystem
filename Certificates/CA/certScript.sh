@@ -1,10 +1,10 @@
 #!/bin/bash
 name="NameNamesson"
-occupation="Doctor" #Doctor/Patient/Nurse/Government
-division="Surgery"
+division="surgery"
+occupation="doctor" #Doctor/Patient/Nurse/Government
 password="password"
 
-keytool -keystore ${name} -genkey -keypass $password -storepass $password -alias $name -dname "CN=$name, OU=$occupation, O=$division"
+keytool -keystore ${name} -genkey -keypass $password -storepass $password -alias $name -dname "CN=$name, OU=$division, O=$occupation"
 keytool -keystore ${name} -certreq -alias $name -keyalg rsa -file ${name}.csr -storepass $password
 openssl x509 -req -in ${name}.csr -CA CA.pem -CAkey CAkey.pem -CAcreateserial -out ${name}Signed.pem -passin pass:password
 rm CA.srl
