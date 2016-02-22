@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 
+import data.Hasher;
 import data.Journal;
 
 import java.security.KeyStore;
@@ -29,6 +30,7 @@ public class Client {
 
 	private static ObjectInputStream in;
 	private static final String certFolderPath = "Certificates" + File.separator + "Client" + File.separator;
+	private static final String TRUSTSTORE_SHA256 = "e6438b093f45db2de16398a8653cd947e96cce0db8e983573a9d85592e8101c3";
 
 	public static void main(String[] args) throws Exception {
 		String host = null;
@@ -43,6 +45,12 @@ public class Client {
 			System.out.println("USAGE: java client host port");
 			System.exit(-1);
 		}
+		
+		if (!Hasher.hashFile(certFolderPath + "clienttruststore").equals(TRUSTSTORE_SHA256)) {
+			System.out.println("[WARNING] Truststore is corrupt or has been tampered with!");
+			System.exit(-1);
+		}
+		
 		try { /* get input parameters */
 			host = args[0];
 			port = Integer.parseInt(args[1]);
