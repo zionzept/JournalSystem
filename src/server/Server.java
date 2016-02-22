@@ -103,7 +103,7 @@ public class Server implements Runnable {
         
         if (!Hasher.hashFile(certFolderPath + "servertruststore").equals(TRUSTSTORE_SHA256)) {
         	System.out.println("[WARNING] Truststore is corrupt or has been tampered with!");
-			System.exit(-1);
+        	System.exit(-1);
         }
         
         String type = "TLS";
