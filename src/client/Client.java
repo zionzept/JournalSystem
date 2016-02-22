@@ -2,6 +2,7 @@ package client;
 
 import java.net.*;
 import java.io.*;
+
 import javax.net.ssl.*;
 import javax.security.cert.X509Certificate;
 import javax.swing.JLabel;
@@ -27,6 +28,7 @@ import java.math.BigInteger;
 public class Client {
 
 	private static ObjectInputStream in;
+	private static final String certFolderPath = "Certificates" + File.separator + "Client" + File.separator;
 
 	public static void main(String[] args) throws Exception {
 		String host = null;
@@ -65,7 +67,7 @@ public class Client {
 				ks.load(new FileInputStream(keystore), keyStorePassword); // keystore
 																	// password
 																	// (storepass)
-				ts.load(new FileInputStream("clienttruststore"), trustStorePassword); // truststore
+				ts.load(new FileInputStream(certFolderPath + "clienttruststore"), trustStorePassword); // truststore
 																			// password
 																			// (storepass);
 				kmf.init(ks, keyStorePassword); // user password (keypass)
@@ -75,6 +77,7 @@ public class Client {
 			} catch (Exception e) {
 				throw new IOException(e.getMessage());
 			}
+			System.out.println(host + " " + port);
 			SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
 			System.out.println("\nsocket before handshake:\n" + socket + "\n");
 

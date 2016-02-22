@@ -28,11 +28,12 @@ import javax.security.cert.X509Certificate;
 import data.Journal;
 
 public class Server implements Runnable {
-	static FileHandler fh;
+	private static HashMap<String, Journal> journals = new HashMap<String, Journal>();
+	private static ServerSocket serverSocket = null;
+	private static FileHandler fh;
 	private static Logger logger;
-    private ServerSocket serverSocket = null;
     private static int numConnectedClients = 0;
-    HashMap<String, Journal> journals = new HashMap<String, Journal>();
+    private static String certFolderPath = "Certificates" + File.separator + "Server" + File.separator;
 
     public Server(ServerSocket ss) throws IOException {
         serverSocket = ss;
@@ -54,13 +55,17 @@ public class Server implements Runnable {
             System.out.println("issuer name:\n" + issuer+ "\n");
             System.out.println("serial number:\n" + serialNo.toString());
             System.out.println(numConnectedClients + " concurrent connection(s)\n");
+            
+            Subject suuu = new Subject(subject);
+            
+            System.out.println(suuu.getProperty("CN"));
 
             ObjectOutputStream out = null;
             ObjectInputStream in = null;
             out = (ObjectOutputStream)(socket.getOutputStream());
             in = (ObjectInputStream)(socket.getInputStream());
             
-            communication(out, in);
+            communication(out, in, suuu);
 
 			in.close();
 			out.close();
@@ -79,7 +84,7 @@ public class Server implements Runnable {
 
     public static void main(String args[]) {
         setupLogger();
-        int port = -1;
+        int port = 14922;
         if (args.length >= 1) {
             port = Integer.parseInt(args[0]);
         }
@@ -93,7 +98,6 @@ public class Server implements Runnable {
             System.out.println("Unable to start Server: " + e.getMessage());
             e.printStackTrace();
         }
-    	
     }
 
     private static ServerSocketFactory getServerSocketFactory(String type) {
@@ -107,8 +111,8 @@ public class Server implements Runnable {
 				KeyStore ts = KeyStore.getInstance("JKS");
                 char[] password = "password".toCharArray();
 
-                ks.load(new FileInputStream("serverkeystore"), password);  // keystore password (storepass)
-                ts.load(new FileInputStream("servertruststore"), password); // truststore password (storepass)
+                ks.load(new FileInputStream(certFolderPath + "serverkeystore"), password);  // keystore password (storepass)
+                ts.load(new FileInputStream(certFolderPath + "servertruststore"), password); // truststore password (storepass)
                 kmf.init(ks, password); // certificate password (keypass)
                 tmf.init(ts);  // possible to use keystore as truststore here
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
@@ -123,7 +127,7 @@ public class Server implements Runnable {
         return null;
     }
     
-    private void communication(ObjectOutputStream out, ObjectInputStream in) {
+    private void communication(ObjectOutputStream out, ObjectInputStream in, Subject subject) {
     	Object msg;
     	while (true) {
 	    	msg = receive(in);
@@ -133,16 +137,16 @@ public class Server implements Runnable {
 	    	}
 	    	switch ((String)msg) {
 	    	case "read":	//Patient: Own, Nurse: Own and division, Doctor: Own and division, Government agency: all
-	    		read(out, in, msg);
+	    		read(out, in, msg, subject);
 	    		break;
 	    	case "write":	//Nurse: Own, Doctor: Own
-	    		write(out, in, msg);
+	    		write(out, in, msg, subject);
 	    		break;
 	    	case "add":		//Doctor only
-	    		add(out, in, msg);
+	    		add(out, in, msg, subject);
 	    		break;
 	    	case "delete":	//Government agency: all
-	    		delete(out, in, msg);
+	    		delete(out, in, msg, subject);
 	    		break;
 	    	default:
 	    		send(out, "failed");
@@ -153,14 +157,20 @@ public class Server implements Runnable {
     
 
    
-    private void read(ObjectOutputStream out, ObjectInputStream in, Object msg){
+    private void read(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
     	msg = receive(in);
 		if (!(msg instanceof String)) {
 			send(out, "failed");
 			return;
     	}
-		//TODO: check access rights
 		Journal journal = journals.get(msg);
+		if (!(subject.getProperty("O").equals("patient") && subject.getProperty("CN").equals(journal.getPatient())
+				|| subject.getProperty("O").equals("nurse") && subject.getProperty("OU").equals(journal.getDivision())
+				|| subject.getProperty("O").equals("doctor") && subject.getProperty("OU").equals(journal.getDivision())
+				|| subject.getProperty("O").equals("government"))) {
+			send(out, "access denied");
+		}
+		//TODO: check access rights
 		if (journal == null) {
 			send(out, "failed");
 			return;
@@ -169,14 +179,17 @@ public class Server implements Runnable {
 		send(out, journal);
     }
     
-	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg){
+	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			send(out, "failed");
 			return;
     	}
-		//TODO: check access rights
 		Journal journal = journals.get(msg);
+		if (!(subject.getProperty("O").equals("nurse") && subject.getProperty("CN").equals(journal.getNurse())
+				|| subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
+			send(out, "access denied");
+		}
 		if (journal == null) {
 			send(out, "failed");
 			return;
@@ -192,14 +205,16 @@ public class Server implements Runnable {
 		send(out, "confirmed");
 	}
 	
-	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg){
+	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
 			send(out, "failed");
 			return;
     	}
-		//TODO: check access rights 
 		Journal journal = (Journal)msg;
+		if (!(subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
+			send(out, "access denied");
+		}
 		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
 			send(out, "failed");
 			return;
@@ -209,14 +224,16 @@ public class Server implements Runnable {
 		send(out, "access granted");
 	}
 	
-	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg){
+	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			send(out, "failed");
 			return;
     	}
-		//TODO: check access rights 
 		Journal journal = journals.get(msg);
+		if (!(subject.getProperty("O").equals("government"))) {
+			send(out, "access denied");
+		}
 		if (journal == null) {	//cannot delete what isn't there
 			send(out, "failed");
 			return;

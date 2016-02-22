@@ -11,20 +11,17 @@ public class Journal {
 	 * Create a new Journal.
 	 */
 	public Journal(String patient, String doctor, String nurse, String division, String data) {
-		this.patient = patient;
-		this.doctor = doctor;
-		this.nurse = nurse;
-		this.division = division;
-		this.data = data;
+		this.patient = patient.toLowerCase();
+		this.doctor = doctor.toLowerCase();
+		this.nurse = nurse.toLowerCase();
+		this.division = division.toLowerCase();
+		this.data = data.toLowerCase();
 	}
 	/**
 	 * Create a new Journal without a nurse.
 	 */
 	public Journal(String patient, String doctor, String division, String data) {
-		this.patient = patient;
-		this.doctor = doctor;
-		this.division = division;
-		this.data = data;
+		this(patient, doctor, null, division, data);
 	}
 
 	public void setPatient(String patient) {
