@@ -176,6 +176,7 @@ public class Server implements Runnable {
     private void read(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
     	msg = receive(in);
 		if (!(msg instanceof String)) {
+			logger.info("[FAILED] Unknown input for Read");
 			send(out, "failed");
 			return;
     	}
@@ -184,82 +185,94 @@ public class Server implements Runnable {
 				|| subject.getProperty("O").equals("nurse") && subject.getProperty("OU").equals(journal.getDivision())
 				|| subject.getProperty("O").equals("doctor") && subject.getProperty("OU").equals(journal.getDivision())
 				|| subject.getProperty("O").equals("government"))) {
+			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to read " + journal.toString());
 			send(out, "access denied");
 			return;
 		}
 		//TODO: check access rights
 		if (journal == null) {
+			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to read" + journal.toString());
 			send(out, "failed");
 			return;
 		}
-		logger.info("Read " + journal.toString());
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " read " + journal.toString());
 		send(out, journal);
     }
     
 	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
 		msg = receive(in);
 		if (!(msg instanceof String)) {
+			logger.info("[FAILED] Unknown input for Write");
 			send(out, "failed");
 			return;
     	}
 		Journal journal = journals.get(msg);
 		if (!(subject.getProperty("O").equals("nurse") && subject.getProperty("CN").equals(journal.getNurse())
 				|| subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
+			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to write to " + journal.toString());
 			send(out, "access denied");
 			return;
 		}
 		if (journal == null) {
+			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to write to non-existing journal.");
 			send(out, "failed");
 			return;
 		}
 		send(out, journal);
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
+			logger.info("[FAILED] Unknown input for write");
 			send(out, "failed");
 			return;
 		}
 		journals.put(journal.getPatient(), journal);
-		logger.info("Write " + journal.toString());
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journal.toString());
 		send(out, "confirmed");
 	}
 	
 	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
+			logger.info("[FAILED] Unknown input for Add");
 			send(out, "failed");
 			return;
     	}
 		Journal journal = (Journal)msg;
 		if (!(subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
+			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
 			send(out, "access denied");
 			return;
 		}
 		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
+			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
 			send(out, "failed");
 			return;
 		}
 		journals.put(journal.getPatient(), journal);
-		logger.info("Added " + journal.toString());
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " added " + journal.toString());
 		send(out, "access granted");
 	}
 	
 	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
 		msg = receive(in);
 		if (!(msg instanceof String)) {
+			logger.info("[FAILED] Unknown input for Delete");
 			send(out, "failed");
 			return;
     	}
 		Journal journal = journals.get(msg);
 		if (!(subject.getProperty("O").equals("government"))) {
+			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
 			send(out, "access denied");
 			return;
 		}
 		if (journal == null) {	//cannot delete what isn't there
+			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to remove non-existing journal.");
 			send(out, "failed");
 			return;
 		}
 		journals.remove(journal);
-		logger.info("Removed " + journal.toString());
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " removed " + journal.toString());
 		send(out, "access granted");
 	}
     
