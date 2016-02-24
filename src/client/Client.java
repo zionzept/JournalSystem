@@ -23,6 +23,11 @@ import javax.swing.JPasswordField;
 import data.Hasher;
 import data.Journal;
 
+import java.security.KeyStore;
+import java.security.cert.*;
+import java.util.LinkedList;
+import java.math.BigInteger;
+
 /*
  * This example shows how to set up a key manager to perform client
  * authentication.
@@ -144,7 +149,7 @@ public class Client {
 	}
 
 	private static void read(String patient, ObjectOutputStream out) {
-		Journal journal = null;
+		LinkedList<Journal> journals = null;
 		Object o = null;
 		try {
 			out.writeObject("read");
@@ -154,32 +159,38 @@ public class Client {
 			e1.printStackTrace();
 		}
 
-		if (o != null && o.getClass().equals(Journal.class)) {
-			journal = (Journal) o;
-			displayJournal(journal, false);
+		if (o != null && o.getClass().equals(LinkedList.class)) {
+			journals = (LinkedList<Journal>) o;
+			displayJournal(journals, false);
 		} else {
 			System.out.println("Access denied");
 		}
 	}
 
 	private static void write(String patient, ObjectOutputStream out) {
-		Journal journal = null;
+		LinkedList<Journal> journals = null;
 		Object o = null;
 		try {
 			out.writeObject("write");
 			out.writeObject(patient);
-			o = in.readUnshared();
+			out.reset();
+			o = in.readObject();
 		} catch (IOException | ClassNotFoundException e1) {
 			e1.printStackTrace();
 		}
 
-		if (o != null && o.getClass().equals(Journal.class)) {
-			journal = (Journal) o;
-			displayJournal(journal, true);
+		if (o != null && o.getClass().equals(LinkedList.class)) {
+			journals = (LinkedList<Journal>) o;
+			LinkedList<Journal> sendJournals = new LinkedList<Journal>();
+			for(Journal j : journals){
+				sendJournals.add(j);
+			}
+			displayJournal(sendJournals, true);
+
+			
 			try {
-				out.writeUnshared(journal);
+				out.writeObject(sendJournals);
 				out.reset();
-				System.out.println(journal.getData());
 				String answer = (String)in.readObject();
 				System.out.println(answer);
 			} catch (IOException | ClassNotFoundException e) {
@@ -192,10 +203,12 @@ public class Client {
 
 	private static void add(String patient, ObjectOutputStream out) {
 		Journal journal = new Journal("<patient>", "<doctor>", "<nurse>", "<division>", "<data>");
-		displayJournal(journal, true);
+		LinkedList<Journal> dispJournal = new LinkedList<Journal>();
+		dispJournal.add(journal);
+		displayJournal(dispJournal, true);
 		try {
 			out.writeObject("add");
-			out.writeUnshared(journal);
+			out.writeObject(journal);
 			out.reset();
 			String answer = (String) in.readObject();
 			System.out.println(answer);
@@ -217,13 +230,15 @@ public class Client {
 		}
 	}
 
-	private static void displayJournal(Journal journal, boolean editable) {
-		GUICreatorThread guict = new GUICreatorThread(journal, editable);
-		guict.start();
-		try {
-			guict.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+	private static void displayJournal(LinkedList<Journal> journals, boolean editable) {
+		for(Journal journal : journals) {
+			GUICreatorThread guict = new GUICreatorThread(journal, editable);
+			guict.start();
+			try {
+				guict.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
