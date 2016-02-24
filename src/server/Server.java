@@ -2,6 +2,8 @@ package server;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -11,6 +13,7 @@ import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -31,7 +34,8 @@ import data.Hasher;
 import data.Journal;
 
 public class Server implements Runnable {
-	private static HashMap<String, Journal> journals = new HashMap<String, Journal>();
+	private static final File journalFile = new File("journals");
+	private static HashMap<String, LinkedList<Journal>> journals = new HashMap<>();
 	private static Semaphore connectSem;
 	private static ServerSocket serverSocket = null;
 	private static FileHandler fh;
@@ -94,8 +98,9 @@ public class Server implements Runnable {
 
     private void newListener() { (new Thread(this)).start(); } // calls run()
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws ClassNotFoundException, IOException {
         setupLogger();
+        load();
         int port = 14922;
         if (args.length >= 1) {
             port = Integer.parseInt(args[0]);
@@ -145,7 +150,7 @@ public class Server implements Runnable {
         return null;
     }
     
-    private void communication(ObjectOutputStream out, ObjectInputStream in, Subject subject) {
+    private void communication(ObjectOutputStream out, ObjectInputStream in, Subject subject) throws IOException {
     	Object msg;
 	    	msg = receive(in);
 	    	if (!(msg instanceof String)) {
@@ -180,58 +185,79 @@ public class Server implements Runnable {
 			send(out, "failed");
 			return;
     	}
-		Journal journal = journals.get(msg);
-		if (!(subject.getProperty("O").equals("patient") && subject.getProperty("CN").equals(journal.getPatient())
-				|| subject.getProperty("O").equals("nurse") && subject.getProperty("OU").equals(journal.getDivision())
-				|| subject.getProperty("O").equals("doctor") && subject.getProperty("OU").equals(journal.getDivision())
-				|| subject.getProperty("O").equals("government"))) {
-			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to read " + journal.toString());
-			send(out, "access denied");
-			return;
-		}
-		//TODO: check access rights
-		if (journal == null) {
-			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to read" + journal.toString());
+		LinkedList<Journal> journals = Server.journals.get(msg);
+		if (journals.isEmpty()) {
+			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to read from non-existing journal.");
 			send(out, "failed");
 			return;
 		}
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " read " + journal.toString());
-		send(out, journal);
+		LinkedList<Journal> granted = new LinkedList<>();
+		for (Journal journal : journals) {
+			if (subject.getProperty("O").equals("patient") && subject.getProperty("CN").equals(journal.getPatient())
+					|| subject.getProperty("O").equals("nurse") && subject.getProperty("OU").equals(journal.getDivision())
+					|| subject.getProperty("O").equals("doctor") && subject.getProperty("OU").equals(journal.getDivision())
+					|| subject.getProperty("O").equals("government")) {
+				granted.add(journal);
+			}
+		}
+		if (granted.isEmpty()) {
+			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to read " + journals.toString());
+			send(out, "access denied");
+			return;
+		}
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
+		send(out, granted);
     }
     
-	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
+	@SuppressWarnings("unchecked")
+	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			logger.info("[FAILED] Unknown input for Write");
 			send(out, "failed");
 			return;
     	}
-		Journal journal = journals.get(msg);
-		if (!(subject.getProperty("O").equals("nurse") && subject.getProperty("CN").equals(journal.getNurse())
-				|| subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
-			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to write to " + journal.toString());
-			send(out, "access denied");
-			return;
-		}
-		if (journal == null) {
+		LinkedList<Journal> journals = Server.journals.get(msg);
+		if (journals.isEmpty()) {
 			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to write to non-existing journal.");
 			send(out, "failed");
 			return;
 		}
-		send(out, journal);
+		LinkedList<Journal> granted = new LinkedList<>();
+		LinkedList<Integer> indexList = new LinkedList<>();
+		int counter = 0;
+		for (Journal journal : journals) {
+			if (subject.getProperty("O").equals("nurse") && subject.getProperty("CN").equals(journal.getNurse())
+					|| subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor())) {
+				granted.add(journal);
+				indexList.add(counter);
+			}
+			counter++;
+		}
+		if (granted.isEmpty()) {
+			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to write to " + journals.toString());
+			send(out, "access denied");
+			return;
+		}
+		send(out, granted);
 		msg = receive(in);
-		if (!(msg instanceof Journal)) {
+		if (!(msg instanceof LinkedList<?>)) {
 			logger.info("[FAILED] Unknown input for write");
 			send(out, "failed");
 			return;
 		}
-		journal = (Journal) msg;
-		journals.put(journal.getPatient(), journal);
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journal.toString());
+		
+		counter = 0;
+		for (Journal journal : (LinkedList<Journal>) msg) {
+			journals.set(indexList.get(counter), journal);
+			counter++;
+		}
+		save();
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journals.toString());
 		send(out, "confirmed");
 	}
 	
-	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
+	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
 			logger.info("[FAILED] Unknown input for Add");
@@ -249,31 +275,40 @@ public class Server implements Runnable {
 			send(out, "failed");
 			return;
 		}
-		journals.put(journal.getPatient(), journal);
+		LinkedList<Journal> jrnel = journals.get(journal.getPatient());
+		if (jrnel == null) {
+			jrnel = new LinkedList<Journal>();
+			journals.put(journal.getPatient(), jrnel);
+		}
+		jrnel.add(journal);
+		save();
 		logger.info("[GRANTED] " + subject.getProperty("CN") + " added " + journal.toString());
 		send(out, "access granted");
 	}
 	
-	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
+	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			logger.info("[FAILED] Unknown input for Delete");
 			send(out, "failed");
 			return;
     	}
-		Journal journal = journals.get(msg);
-		if (!(subject.getProperty("O").equals("government"))) {
-			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
-			send(out, "access denied");
-			return;
+		LinkedList<Journal> journals = Server.journals.get(msg);
+		for (Journal journal : journals) {
+			if (!(subject.getProperty("O").equals("government"))) {
+				logger.info("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
+				send(out, "access denied");
+				return;
+			}
+			if (journal == null) {	//cannot delete what isn't there
+				logger.info("[FAILED] " + subject.getProperty("CN") + " tried to remove non-existing journal.");
+				send(out, "failed");
+				return;
+			}
 		}
-		if (journal == null) {	//cannot delete what isn't there
-			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to remove non-existing journal.");
-			send(out, "failed");
-			return;
-		}
-		journals.remove(journal);
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " removed " + journal.toString());
+		Server.journals.remove(journals);
+		save();
+		logger.info("[GRANTED] " + subject.getProperty("CN") + " removed " + journals.toString());
 		send(out, "access granted");
 	}
     
@@ -296,6 +331,21 @@ public class Server implements Runnable {
 			e.printStackTrace();
 		}
     }
+    
+    @SuppressWarnings("unchecked")
+	private static void load() throws ClassNotFoundException, IOException {
+    	if (journalFile.exists()) {
+	    	ObjectInputStream in = new ObjectInputStream(new FileInputStream(journalFile));
+	    	journals = (HashMap<String, LinkedList<Journal>>) in.readObject();
+	    	in.close();
+    	}
+	}
+	
+	private static void save() throws IOException {
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(journalFile));
+		out.writeObject(journals);
+		out.close();
+	}
     
     // Sets up logger to write to file. A new file will be made for each day.
     private static void setupLogger() {
