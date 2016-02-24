@@ -1,9 +1,19 @@
 package client;
 
-import java.net.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.math.BigInteger;
+import java.security.KeyStore;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import javax.security.cert.X509Certificate;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -12,10 +22,6 @@ import javax.swing.JPasswordField;
 
 import data.Hasher;
 import data.Journal;
-
-import java.security.KeyStore;
-import java.security.cert.*;
-import java.math.BigInteger;
 
 /*
  * This example shows how to set up a key manager to perform client

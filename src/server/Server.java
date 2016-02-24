@@ -2,7 +2,6 @@ package server;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.Semaphore;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -27,8 +27,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.cert.X509Certificate;
-
-import java.util.concurrent.Semaphore;
 
 import data.Hasher;
 import data.Journal;
@@ -91,7 +89,6 @@ public class Server implements Runnable {
             e.printStackTrace();
             return;
         } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
@@ -99,7 +96,7 @@ public class Server implements Runnable {
     private void newListener() { (new Thread(this)).start(); } // calls run()
 
     public static void main(String args[]) throws ClassNotFoundException, IOException {
-        setupLogger();
+        log("startup");
         load();
         int port = 14922;
         if (args.length >= 1) {
@@ -181,13 +178,13 @@ public class Server implements Runnable {
     private void read(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
     	msg = receive(in);
 		if (!(msg instanceof String)) {
-			logger.info("[FAILED] Unknown input for Read");
+			log("[FAILED] Unknown input for Read");
 			send(out, "failed");
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
 		if (journals.isEmpty()) {
-			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to read from non-existing journal.");
+			log("[FAILED] " + subject.getProperty("CN") + " tried to read from non-existing journal.");
 			send(out, "failed");
 			return;
 		}
@@ -201,11 +198,11 @@ public class Server implements Runnable {
 			}
 		}
 		if (granted.isEmpty()) {
-			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to read " + journals.toString());
+			log("[DENIED] " + subject.getProperty("CN") + " tried to read " + journals.toString());
 			send(out, "access denied");
 			return;
 		}
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
+		log("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
 		send(out, granted);
     }
     
@@ -213,13 +210,13 @@ public class Server implements Runnable {
 	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
-			logger.info("[FAILED] Unknown input for Write");
+			log("[FAILED] Unknown input for Write");
 			send(out, "failed");
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
 		if (journals.isEmpty()) {
-			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to write to non-existing journal.");
+			log("[FAILED] " + subject.getProperty("CN") + " tried to write to non-existing journal.");
 			send(out, "failed");
 			return;
 		}
@@ -235,14 +232,14 @@ public class Server implements Runnable {
 			counter++;
 		}
 		if (granted.isEmpty()) {
-			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to write to " + journals.toString());
+			log("[DENIED] " + subject.getProperty("CN") + " tried to write to " + journals.toString());
 			send(out, "access denied");
 			return;
 		}
 		send(out, granted);
 		msg = receive(in);
 		if (!(msg instanceof LinkedList<?>)) {
-			logger.info("[FAILED] Unknown input for write");
+			log("[FAILED] Unknown input for write");
 			send(out, "failed");
 			return;
 		}
@@ -253,25 +250,25 @@ public class Server implements Runnable {
 			counter++;
 		}
 		save();
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journals.toString());
+		log("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journals.toString());
 		send(out, "confirmed");
 	}
 	
 	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
-			logger.info("[FAILED] Unknown input for Add");
+			log("[FAILED] Unknown input for Add");
 			send(out, "failed");
 			return;
     	}
 		Journal journal = (Journal)msg;
 		if (!(subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
-			logger.info("[DENIED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
+			log("[DENIED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
 			send(out, "access denied");
 			return;
 		}
 		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
-			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
+			log("[FAILED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
 			send(out, "failed");
 			return;
 		}
@@ -282,33 +279,33 @@ public class Server implements Runnable {
 		}
 		jrnel.add(journal);
 		save();
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " added " + journal.toString());
+		log("[GRANTED] " + subject.getProperty("CN") + " added " + journal.toString());
 		send(out, "access granted");
 	}
 	
 	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
-			logger.info("[FAILED] Unknown input for Delete");
+			log("[FAILED] Unknown input for Delete");
 			send(out, "failed");
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
 		for (Journal journal : journals) {
 			if (!(subject.getProperty("O").equals("government"))) {
-				logger.info("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
+				log("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
 				send(out, "access denied");
 				return;
 			}
 			if (journal == null) {	//cannot delete what isn't there
-				logger.info("[FAILED] " + subject.getProperty("CN") + " tried to remove non-existing journal.");
+				log("[FAILED] " + subject.getProperty("CN") + " tried to remove non-existing journal.");
 				send(out, "failed");
 				return;
 			}
 		}
 		Server.journals.remove(journals);
 		save();
-		logger.info("[GRANTED] " + subject.getProperty("CN") + " removed " + journals.toString());
+		log("[GRANTED] " + subject.getProperty("CN") + " removed " + journals.toString());
 		send(out, "access granted");
 	}
     
@@ -348,22 +345,23 @@ public class Server implements Runnable {
 	}
     
     // Sets up logger to write to file. A new file will be made for each day.
-    private static void setupLogger() {
-    		logger = Logger.getLogger( Server.class.getName() );
-    	    File file = new File("Logs");
-    	    if (!file.exists()) {
-    	    	System.out.println("nodir");
-    	    	file.mkdir();
-    	    }
-    	    String filepath = file + File.separator + "Server_";
-	        SimpleDateFormat format = new SimpleDateFormat("MM-dd");
-	        try {new FileHandler();   
-	            fh = new FileHandler(filepath + format.format(Calendar.getInstance().getTime()) + ".log", true);
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	        fh.setFormatter(new SimpleFormatter());
-	        logger.addHandler(fh);
-	        logger.info("startup");
+    private static void log(String message) {
+    	logger = Logger.getLogger( Server.class.getName() );
+	    File file = new File("Logs");
+	    if (!file.exists()) {
+	    	System.out.println("nodir");
+	    	file.mkdir();
+	    }
+	    String filepath = file + File.separator + "Server_";
+        SimpleDateFormat format = new SimpleDateFormat("MM-dd");
+        try {new FileHandler();   
+            fh = new FileHandler(filepath + format.format(Calendar.getInstance().getTime()) + ".log", true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        fh.setFormatter(new SimpleFormatter());
+        logger.addHandler(fh);
+        logger.info("message");
+        fh.close();
     }
 }

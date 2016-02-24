@@ -16,6 +16,7 @@ import javax.swing.JTextArea;
 import data.Journal;
 
 public class JournalDisplay extends JFrame{
+	private static final long serialVersionUID = 1L;
 	private JTextArea dataTextArea;
 	private JTextArea divisionTextArea;
 	private JTextArea doctorTextArea;
