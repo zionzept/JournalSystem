@@ -1,7 +1,7 @@
 #!/bin/bash
-name="NameNamesson"
+name="nurse1"
 division="surgery"
-occupation="doctor" #Doctor/Patient/Nurse/Government
+occupation="nurse" #Doctor/Patient/Nurse/Government
 password="password"
 
 keytool -keystore ${name} -genkey -keypass $password -storepass $password -alias $name -dname "CN=$name, OU=$division, O=$occupation"

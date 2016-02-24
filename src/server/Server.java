@@ -225,6 +225,7 @@ public class Server implements Runnable {
 			send(out, "failed");
 			return;
 		}
+		journal = (Journal) msg;
 		journals.put(journal.getPatient(), journal);
 		logger.info("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journal.toString());
 		send(out, "confirmed");
@@ -279,7 +280,7 @@ public class Server implements Runnable {
 	private Object receive(ObjectInputStream in){
 		Object msg = null;
 		try {
-			msg = in.readObject();
+			msg = in.readUnshared();
         } catch (ClassNotFoundException | IOException e) {
         	e.printStackTrace();
         }
@@ -288,7 +289,8 @@ public class Server implements Runnable {
     
     private void send(ObjectOutputStream out, Object obj) {
     	try {
-			out.writeObject(obj);
+    		out.reset();
+			out.writeUnshared(obj);
 			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();

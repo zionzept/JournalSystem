@@ -162,7 +162,7 @@ public class Client {
 		try {
 			out.writeObject("write");
 			out.writeObject(patient);
-			o = in.readObject();
+			o = in.readUnshared();
 		} catch (IOException | ClassNotFoundException e1) {
 			e1.printStackTrace();
 		}
@@ -171,10 +171,12 @@ public class Client {
 			journal = (Journal) o;
 			displayJournal(journal, true);
 			try {
-				out.writeObject(journal);
-				String answer = in.readUTF();
+				out.writeUnshared(journal);
+				out.reset();
+				System.out.println(journal.getData());
+				String answer = (String)in.readObject();
 				System.out.println(answer);
-			} catch (IOException e) {
+			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		} else {
@@ -187,7 +189,8 @@ public class Client {
 		displayJournal(journal, true);
 		try {
 			out.writeObject("add");
-			out.writeObject(journal);
+			out.writeUnshared(journal);
+			out.reset();
 			String answer = (String) in.readObject();
 			System.out.println(answer);
 		} catch (IOException e) {
@@ -202,9 +205,9 @@ public class Client {
 		try {
 			out.writeObject("delete");
 			out.writeObject(patient);
-			String answer = in.readUTF();
+			String answer = (String)in.readObject();
 			System.out.println(answer);
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}

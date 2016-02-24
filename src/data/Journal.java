@@ -53,15 +53,15 @@ public class Journal implements java.io.Serializable{
 	}
 
 	public String getDoctor() {
-		return doctor;
+		return doctor.toLowerCase();
 	}
 
 	public String getNurse() {
-		return nurse;
+		return nurse.toLowerCase();
 	}
 
 	public String getDivision() {
-		return division;
+		return division.toLowerCase();
 	}
 
 	public String getData() {
@@ -69,7 +69,7 @@ public class Journal implements java.io.Serializable{
 	}
 	
 	public String getPatient(){
-		return patient;
+		return patient.toLowerCase();
 	}
 	
 	public String toString(){
