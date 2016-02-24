@@ -270,11 +270,11 @@ public class Server implements Runnable {
 			send(out, "access denied");
 			return;
 		}
-		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
-			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
-			send(out, "failed");
-			return;
-		}
+//		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
+//			logger.info("[FAILED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
+//			send(out, "failed");
+//			return;
+//		}
 		LinkedList<Journal> jrnel = journals.get(journal.getPatient());
 		if (jrnel == null) {
 			jrnel = new LinkedList<Journal>();
@@ -315,7 +315,7 @@ public class Server implements Runnable {
 	private Object receive(ObjectInputStream in){
 		Object msg = null;
 		try {
-			msg = in.readUnshared();
+			msg = in.readObject();
         } catch (ClassNotFoundException | IOException e) {
         	e.printStackTrace();
         }
@@ -324,8 +324,8 @@ public class Server implements Runnable {
     
     private void send(ObjectOutputStream out, Object obj) {
     	try {
-    		out.reset();
-			out.writeUnshared(obj);
+			out.writeObject(obj);
+			out.reset();
 			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
