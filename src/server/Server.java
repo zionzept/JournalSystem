@@ -2,6 +2,8 @@ package server;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,6 +33,7 @@ import data.Hasher;
 import data.Journal;
 
 public class Server implements Runnable {
+	private static final File journalFile = new File("journals");
 	private static HashMap<String, Journal> journals = new HashMap<String, Journal>();
 	private static Semaphore connectSem;
 	private static ServerSocket serverSocket = null;
@@ -94,8 +97,9 @@ public class Server implements Runnable {
 
     private void newListener() { (new Thread(this)).start(); } // calls run()
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws ClassNotFoundException, IOException {
         setupLogger();
+        load();
         int port = 14922;
         if (args.length >= 1) {
             port = Integer.parseInt(args[0]);
@@ -145,7 +149,7 @@ public class Server implements Runnable {
         return null;
     }
     
-    private void communication(ObjectOutputStream out, ObjectInputStream in, Subject subject) {
+    private void communication(ObjectOutputStream out, ObjectInputStream in, Subject subject) throws IOException {
     	Object msg;
 	    	msg = receive(in);
 	    	if (!(msg instanceof String)) {
@@ -199,7 +203,7 @@ public class Server implements Runnable {
 		send(out, journal);
     }
     
-	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
+	private void write(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			logger.info("[FAILED] Unknown input for Write");
@@ -226,11 +230,12 @@ public class Server implements Runnable {
 			return;
 		}
 		journals.put(journal.getPatient(), journal);
+		save();
 		logger.info("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journal.toString());
 		send(out, "confirmed");
 	}
 	
-	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
+	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
 			logger.info("[FAILED] Unknown input for Add");
@@ -249,11 +254,12 @@ public class Server implements Runnable {
 			return;
 		}
 		journals.put(journal.getPatient(), journal);
+		save();
 		logger.info("[GRANTED] " + subject.getProperty("CN") + " added " + journal.toString());
 		send(out, "access granted");
 	}
 	
-	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject){
+	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			logger.info("[FAILED] Unknown input for Delete");
@@ -272,6 +278,7 @@ public class Server implements Runnable {
 			return;
 		}
 		journals.remove(journal);
+		save();
 		logger.info("[GRANTED] " + subject.getProperty("CN") + " removed " + journal.toString());
 		send(out, "access granted");
 	}
@@ -294,6 +301,21 @@ public class Server implements Runnable {
 			e.printStackTrace();
 		}
     }
+    
+    @SuppressWarnings("unchecked")
+	private static void load() throws ClassNotFoundException, IOException {
+    	if (journalFile.exists()) {
+	    	ObjectInputStream in = new ObjectInputStream(new FileInputStream(journalFile));
+	    	journals = (HashMap<String, Journal>) in.readObject();
+	    	in.close();
+    	}
+	}
+	
+	private static void save() throws IOException {
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(journalFile));
+		out.writeObject(journals);
+		out.close();
+	}
     
     // Sets up logger to write to file. A new file will be made for each day.
     private static void setupLogger() {

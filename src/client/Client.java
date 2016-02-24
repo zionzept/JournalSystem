@@ -237,5 +237,4 @@ public class Client {
 			return new char[0];
 		}
 	}
-
 }
