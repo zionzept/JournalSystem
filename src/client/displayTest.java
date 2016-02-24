@@ -11,7 +11,6 @@ public class displayTest {
 		try {
 			t.join();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println(journal.getData());

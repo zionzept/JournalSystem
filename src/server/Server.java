@@ -154,16 +154,16 @@ public class Server implements Runnable {
 	    		send(out, "failed");
 	    	}else{
 	    	switch ((String)msg) {
-	    	case "read":	//Patient: Own, Nurse: Own and division, Doctor: Own and division, Government agency: all
+	    	case "read":
 	    		read(out, in, msg, subject);
 	    		break;
-	    	case "write":	//Nurse: Own, Doctor: Own
+	    	case "write":
 	    		write(out, in, msg, subject);
 	    		break;
-	    	case "add":		//Doctor only
+	    	case "add":
 	    		add(out, in, msg, subject);
 	    		break;
-	    	case "delete":	//Government agency: all
+	    	case "delete":
 	    		delete(out, in, msg, subject);
 	    		break;
 	    	default:
@@ -344,7 +344,6 @@ public class Server implements Runnable {
 		out.close();
 	}
     
-    // Sets up logger to write to file. A new file will be made for each day.
     private static void log(String message) {
     	logger = Logger.getLogger( Server.class.getName() );
 	    File file = new File("Logs");
