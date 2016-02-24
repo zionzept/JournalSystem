@@ -267,11 +267,6 @@ public class Server implements Runnable {
 			send(out, "access denied");
 			return;
 		}
-//		if (journals.get(journal.getPatient()) != null) {	//cannot overwrite with add
-//			log("[FAILED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
-//			send(out, "failed");
-//			return;
-//		}
 		LinkedList<Journal> jrnel = journals.get(journal.getPatient());
 		if (jrnel == null) {
 			jrnel = new LinkedList<Journal>();

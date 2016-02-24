@@ -23,10 +23,7 @@ import javax.swing.JPasswordField;
 import data.Hasher;
 import data.Journal;
 
-import java.security.KeyStore;
-import java.security.cert.*;
 import java.util.LinkedList;
-import java.math.BigInteger;
 
 /*
  * This example shows how to set up a key manager to perform client
@@ -148,6 +145,7 @@ public class Client {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private static void read(String patient, ObjectOutputStream out) {
 		LinkedList<Journal> journals = null;
 		Object o = null;
@@ -167,6 +165,7 @@ public class Client {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private static void write(String patient, ObjectOutputStream out) {
 		LinkedList<Journal> journals = null;
 		Object o = null;
