@@ -151,7 +151,7 @@ public class Server implements Runnable {
     	Object msg;
 	    	msg = receive(in);
 	    	if (!(msg instanceof String)) {
-	    		send(out, "failed");
+	    		send(out, "Command is not String");
 	    	}else{
 	    	switch ((String)msg) {
 	    	case "read":
@@ -167,7 +167,7 @@ public class Server implements Runnable {
 	    		delete(out, in, msg, subject);
 	    		break;
 	    	default:
-	    		send(out, "failed");
+	    		send(out, "Did not recognise command");
 	    		break;
 	    	}
 	    }
@@ -179,13 +179,13 @@ public class Server implements Runnable {
     	msg = receive(in);
 		if (!(msg instanceof String)) {
 			log("[FAILED] Unknown input for Read");
-			send(out, "failed");
+			send(out, "Unknown input for Read");
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
 		if (journals == null || journals.isEmpty()) {
 			log("[FAILED] " + subject.getProperty("CN") + " tried to read from non-existing journal.");
-			send(out, "failed");
+			send(out, "Failed");
 			return;
 		}
 		LinkedList<Journal> granted = new LinkedList<>();
@@ -199,7 +199,7 @@ public class Server implements Runnable {
 		}
 		if (granted.isEmpty()) {
 			log("[DENIED] " + subject.getProperty("CN") + " tried to read " + journals.toString());
-			send(out, "access denied");
+			send(out, "Access denied");
 			return;
 		}
 		log("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
@@ -211,13 +211,13 @@ public class Server implements Runnable {
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			log("[FAILED] Unknown input for Write");
-			send(out, "failed");
+			send(out, "Unknown input for Write");
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
 		if (journals.isEmpty()) {
 			log("[FAILED] " + subject.getProperty("CN") + " tried to write to non-existing journal.");
-			send(out, "failed");
+			send(out, "Failed");
 			return;
 		}
 		LinkedList<Journal> granted = new LinkedList<>();
@@ -233,14 +233,14 @@ public class Server implements Runnable {
 		}
 		if (granted.isEmpty()) {
 			log("[DENIED] " + subject.getProperty("CN") + " tried to write to " + journals.toString());
-			send(out, "access denied");
+			send(out, "Access denied");
 			return;
 		}
 		send(out, granted);
 		msg = receive(in);
 		if (!(msg instanceof LinkedList<?>)) {
-			log("[FAILED] Unknown input for write");
-			send(out, "failed");
+			log("[FAILED] Unknown input for Write");
+			send(out, "Unknown input for Write");
 			return;
 		}
 		
@@ -251,20 +251,20 @@ public class Server implements Runnable {
 		}
 		save();
 		log("[GRANTED] " + subject.getProperty("CN") + " wrote to " + journals.toString());
-		send(out, "confirmed");
+		send(out, "Access granted");
 	}
 	
 	private void add(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof Journal)) {
 			log("[FAILED] Unknown input for Add");
-			send(out, "failed");
+			send(out, "Unknown input for Add");
 			return;
     	}
 		Journal journal = (Journal)msg;
 		if (!(subject.getProperty("O").equals("doctor") && subject.getProperty("CN").equals(journal.getDoctor()))) {
 			log("[DENIED] " + subject.getProperty("CN") + " tried to add " + journal.toString());
-			send(out, "access denied");
+			send(out, "Access denied");
 			return;
 		}
 		LinkedList<Journal> jrnel = journals.get(journal.getPatient());
@@ -275,33 +275,33 @@ public class Server implements Runnable {
 		jrnel.add(journal);
 		save();
 		log("[GRANTED] " + subject.getProperty("CN") + " added " + journal.toString());
-		send(out, "access granted");
+		send(out, "Access granted");
 	}
 	
 	private void delete(ObjectOutputStream out, ObjectInputStream in, Object msg, Subject subject) throws IOException{
 		msg = receive(in);
 		if (!(msg instanceof String)) {
 			log("[FAILED] Unknown input for Delete");
-			send(out, "failed");
+			send(out, "Unknown input for Delete");
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
 		for (Journal journal : journals) {
 			if (!(subject.getProperty("O").equals("government"))) {
 				log("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
-				send(out, "access denied");
+				send(out, "Access denied");
 				return;
 			}
 			if (journal == null) {	//cannot delete what isn't there
 				log("[FAILED] " + subject.getProperty("CN") + " tried to remove non-existing journal.");
-				send(out, "failed");
+				send(out, "Failed");
 				return;
 			}
 		}
 		Server.journals.remove(journals);
 		save();
 		log("[GRANTED] " + subject.getProperty("CN") + " removed " + journals.toString());
-		send(out, "access granted");
+		send(out, "Access granted");
 	}
     
 	private Object receive(ObjectInputStream in){
