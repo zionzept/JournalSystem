@@ -147,56 +147,42 @@ public class Client {
 
 	@SuppressWarnings("unchecked")
 	private static void read(String patient, ObjectOutputStream out) {
-		LinkedList<Journal> journals = null;
-		Object o = null;
-		try {
-			out.writeObject("read");
-			out.writeObject(patient);
-			o = in.readObject();
-		} catch (IOException | ClassNotFoundException e1) {
-			e1.printStackTrace();
-		}
-
-		if (o != null && o.getClass().equals(LinkedList.class)) {
-			journals = (LinkedList<Journal>) o;
+		send(out, "read");
+		send(out, patient);
+		Object answer = receive(in);
+		
+		if (answer != null && answer instanceof LinkedList<?>) {
+			LinkedList<Journal> journals = (LinkedList<Journal>) answer;
 			displayJournal(journals, false);
+		} else if (answer != null && answer instanceof String) {
+			answer = (String) answer;
+			System.out.println(answer);
 		} else {
-			System.out.println("Access denied");
+			System.out.println("Did not receive anything from server");
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private static void write(String patient, ObjectOutputStream out) {
-		LinkedList<Journal> journals = null;
-		Object o = null;
-		try {
-			out.writeObject("write");
-			out.writeObject(patient);
-			out.reset();
-			o = in.readObject();
-		} catch (IOException | ClassNotFoundException e1) {
-			e1.printStackTrace();
-		}
-
-		if (o != null && o.getClass().equals(LinkedList.class)) {
-			journals = (LinkedList<Journal>) o;
-			LinkedList<Journal> sendJournals = new LinkedList<Journal>();
-			for(Journal j : journals){
-				sendJournals.add(j);
-			}
-			displayJournal(sendJournals, true);
-
+		send(out, "write");
+		send(out, patient);
+		Object answer = receive(in);
+		
+		if (answer != null && answer instanceof LinkedList<?>) {
+			LinkedList<Journal> journals = (LinkedList<Journal>) answer;
+			displayJournal(journals, true);
+			send(out, journals);
+			answer = receive(in);
 			
-			try {
-				out.writeObject(sendJournals);
-				out.reset();
-				String answer = (String)in.readObject();
+			if (answer != null && answer instanceof String) {
+				answer = (String) answer;
 				System.out.println(answer);
-			} catch (IOException | ClassNotFoundException e) {
-				e.printStackTrace();
 			}
+		} else if (answer != null && answer instanceof String) {
+			answer = (String) answer;
+			System.out.println(answer);
 		} else {
-			System.out.println("Did not recieve a journal from server");
+			System.out.println("Did not receive anything from server");
 		}
 	}
 
@@ -205,27 +191,28 @@ public class Client {
 		LinkedList<Journal> dispJournal = new LinkedList<Journal>();
 		dispJournal.add(journal);
 		displayJournal(dispJournal, true);
-		try {
-			out.writeObject("add");
-			out.writeObject(journal);
-			out.reset();
-			String answer = (String) in.readObject();
+		
+		send(out, journal);
+		Object answer = receive(in);
+		
+		if (answer != null && answer instanceof String) {
+			answer = (String) answer;
 			System.out.println(answer);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		} else {
+			System.out.println("Did not receive an answer from server");
 		}
 	}
 
 	private static void delete(String patient, ObjectOutputStream out) {
-		try {
-			out.writeObject("delete");
-			out.writeObject(patient);
-			String answer = (String)in.readObject();
+		send(out, "delete");
+		send(out, patient);
+		Object answer = receive(in);
+		
+		if (answer != null && answer instanceof String) {
+			answer = (String) answer;
 			System.out.println(answer);
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+		} else {
+			System.out.println("Did not receive an answer from server");
 		}
 	}
 
@@ -240,6 +227,26 @@ public class Client {
 			}
 		}
 	}
+	
+	private static Object receive(ObjectInputStream in){
+		Object msg = null;
+		try {
+			msg = in.readObject();
+        } catch (ClassNotFoundException | IOException e) {
+        	e.printStackTrace();
+        }
+        return msg;
+    }
+	
+	private static void send(ObjectOutputStream out, Object obj) {
+    	try {
+			out.writeObject(obj);
+			out.reset();
+			out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
 	
 	private static char[] passPrompt(){
 		JPanel panel = new JPanel();
