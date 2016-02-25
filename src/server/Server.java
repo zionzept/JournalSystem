@@ -183,7 +183,7 @@ public class Server implements Runnable {
 			return;
     	}
 		LinkedList<Journal> journals = Server.journals.get(msg);
-		if (journals.isEmpty()) {
+		if (journals == null || journals.isEmpty()) {
 			log("[FAILED] " + subject.getProperty("CN") + " tried to read from non-existing journal.");
 			send(out, "failed");
 			return;
@@ -355,7 +355,7 @@ public class Server implements Runnable {
         }
         fh.setFormatter(new SimpleFormatter());
         logger.addHandler(fh);
-        logger.info("message");
+        logger.info(message);
         fh.close();
     }
 }
