@@ -192,6 +192,7 @@ public class Client {
 		dispJournal.add(journal);
 		displayJournal(dispJournal, true);
 		
+		send(out, "add");
 		send(out, journal);
 		Object answer = receive(in);
 		
