@@ -156,9 +156,9 @@ public class Client {
 			displayJournal(journals, false);
 		} else if (answer != null && answer instanceof String) {
 			answer = (String) answer;
-			System.out.println(answer);
+			System.out.println("[Server] " + answer);
 		} else {
-			System.out.println("Did not receive anything from server");
+			System.out.println("[Error] Did not receive anything from server");
 		}
 	}
 
@@ -176,13 +176,13 @@ public class Client {
 			
 			if (answer != null && answer instanceof String) {
 				answer = (String) answer;
-				System.out.println(answer);
+				System.out.println("[Server] " + answer);
 			}
 		} else if (answer != null && answer instanceof String) {
 			answer = (String) answer;
-			System.out.println(answer);
+			System.out.println("[Server] " + answer);
 		} else {
-			System.out.println("Did not receive anything from server");
+			System.out.println("[Error] Did not receive anything from server");
 		}
 	}
 
@@ -198,9 +198,9 @@ public class Client {
 		
 		if (answer != null && answer instanceof String) {
 			answer = (String) answer;
-			System.out.println(answer);
+			System.out.println("[Server] " + answer);
 		} else {
-			System.out.println("Did not receive an answer from server");
+			System.out.println("[Error] Did not receive an answer from server");
 		}
 	}
 
@@ -211,9 +211,9 @@ public class Client {
 		
 		if (answer != null && answer instanceof String) {
 			answer = (String) answer;
-			System.out.println(answer);
+			System.out.println("[Server] " + answer);
 		} else {
-			System.out.println("Did not receive an answer from server");
+			System.out.println("[Error] Did not receive an answer from server");
 		}
 	}
 
