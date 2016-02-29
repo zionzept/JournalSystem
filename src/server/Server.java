@@ -40,7 +40,7 @@ public class Server implements Runnable {
 	private static Logger logger;
     private static int numConnectedClients = 0;
     private static final int MAX_NBR_CONNECTIONS = 10;
-    private static final String TRUSTSTORE_SHA256 = "e6438b093f45db2de16398a8653cd947e96cce0db8e983573a9d85592e8101c3";
+    private static final String TRUSTSTORE_SHA256 = "9e86e1d7651a0215cd6417cca16f73298ffae70509bb819ed8f8163a6bf57532";
     private static String certFolderPath = "Certificates" + File.separator + "Server" + File.separator;
 
     public Server(ServerSocket ss) throws IOException {
@@ -204,6 +204,7 @@ public class Server implements Runnable {
 		}
 		log("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
 		send(out, granted);
+		System.out.println(granted.toString());
     }
     
 	@SuppressWarnings("unchecked")
@@ -317,7 +318,7 @@ public class Server implements Runnable {
     private void send(ObjectOutputStream out, Object obj) {
     	try {
 			out.writeObject(obj);
-			out.reset();
+			//out.reset();
 			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
