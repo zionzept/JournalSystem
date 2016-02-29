@@ -33,7 +33,7 @@ import data.Journal;
 
 public class Server implements Runnable {
 	private static final File journalFile = new File("journals");
-	private static HashMap<String, LinkedList<Journal>> journals = new HashMap<>();
+	private static HashMap<String, LinkedList<Journal>> journals = new HashMap<String, LinkedList<Journal>>();
 	private static Semaphore connectSem;
 	private static ServerSocket serverSocket = null;
 	private static FileHandler fh;
@@ -57,19 +57,12 @@ public class Server implements Runnable {
             SSLSession session = socket.getSession();
             X509Certificate cert = (X509Certificate)session.getPeerCertificateChain()[0];
             String subject = cert.getSubjectDN().getName();
-            String issuer = cert.getIssuerDN().getName();
-            BigInteger serialNo = cert.getSerialNumber();
     	    numConnectedClients++;
-            System.out.println("client connected");
-            System.out.println("client name (cert subject DN field): " + subject);
-            System.out.println("issuer name:\n" + issuer+ "\n");
-            System.out.println("serial number:\n" + serialNo.toString());
+            System.out.println(subject + " connected");
             System.out.println(numConnectedClients + " concurrent connection(s)\n");
             
             Subject suuu = new Subject(subject);
             
-            System.out.println(suuu.getProperty("CN"));
-
             ObjectOutputStream out = null;
             ObjectInputStream in = null;
             out = new ObjectOutputStream(socket.getOutputStream());
@@ -182,7 +175,8 @@ public class Server implements Runnable {
 			send(out, "Unknown input for Read");
 			return;
     	}
-		LinkedList<Journal> journals = Server.journals.get(msg);
+		String patient = (String)msg;
+		LinkedList<Journal> journals = Server.journals.get(patient);
 		if (journals == null || journals.isEmpty()) {
 			log("[FAILED] " + subject.getProperty("CN") + " tried to read from non-existing journal.");
 			send(out, "Failed");
@@ -202,9 +196,9 @@ public class Server implements Runnable {
 			send(out, "Access denied");
 			return;
 		}
-		log("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
+		
 		send(out, granted);
-		System.out.println(granted.toString());
+		log("[GRANTED] " + subject.getProperty("CN") + " read " + granted.toString());
     }
     
 	@SuppressWarnings("unchecked")
@@ -215,8 +209,9 @@ public class Server implements Runnable {
 			send(out, "Unknown input for Write");
 			return;
     	}
-		LinkedList<Journal> journals = Server.journals.get(msg);
-		if (journals.isEmpty()) {
+		String patient = (String) msg;
+		LinkedList<Journal> journals = Server.journals.get(patient);
+		if (journals == null ||journals.isEmpty()) {
 			log("[FAILED] " + subject.getProperty("CN") + " tried to write to non-existing journal.");
 			send(out, "Failed");
 			return;
@@ -286,7 +281,8 @@ public class Server implements Runnable {
 			send(out, "Unknown input for Delete");
 			return;
     	}
-		LinkedList<Journal> journals = Server.journals.get(msg);
+		String patient = (String)msg;
+		LinkedList<Journal> journals = Server.journals.get(patient);
 		for (Journal journal : journals) {
 			if (!(subject.getProperty("O").equals("government"))) {
 				log("[DENIED] " + subject.getProperty("CN") + " tried to remove " + journal.toString());
@@ -299,7 +295,7 @@ public class Server implements Runnable {
 				return;
 			}
 		}
-		Server.journals.remove(journals);
+		Server.journals.remove(patient);
 		save();
 		log("[GRANTED] " + subject.getProperty("CN") + " removed " + journals.toString());
 		send(out, "Access granted");
@@ -318,7 +314,7 @@ public class Server implements Runnable {
     private void send(ObjectOutputStream out, Object obj) {
     	try {
 			out.writeObject(obj);
-			//out.reset();
+			out.reset();
 			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();

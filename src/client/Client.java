@@ -46,11 +46,8 @@ public class Client {
 		String command = "";
 		String commandArg = "";
 		String keystore = "";
-		for (int i = 0; i < args.length; i++) {
-			System.out.println("args[" + i + "] = " + args[i]);
-		}
 		if (args.length < 5) {
-			System.out.println("USAGE: java client host port");
+			System.out.println("USAGE: java client host port command commandarg username");
 			System.exit(-1);
 		}
 		
@@ -93,10 +90,7 @@ public class Client {
 			} catch (Exception e) {
 				throw new IOException(e.getMessage());
 			}
-			System.out.println(host + " " + port);
 			SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
-			System.out.println("\nsocket before handshake:\n" + socket + "\n");
-
 			/*
 			 * send http request
 			 *
@@ -110,10 +104,6 @@ public class Client {
 			String subject = cert.getSubjectDN().getName();
 			String issuer = cert.getIssuerDN().getName();
 			BigInteger serialNo = cert.getSerialNumber();
-			System.out.println(
-					"certificate name (subject DN field) on certificate received from server:\n" + subject + "\n");
-			System.out.println("issuer name:\n" + issuer + "\n");
-			System.out.println("serial number:\n" + serialNo.toString());
 			System.out.println("socket after handshake:\n" + socket + "\n");
 			System.out.println("secure connection established\n\n");
 
@@ -150,7 +140,6 @@ public class Client {
 		send(out, "read");
 		send(out, patient);
 		Object answer = receive(in);
-		
 		if (answer != null && answer instanceof LinkedList<?>) {
 			LinkedList<Journal> journals = (LinkedList<Journal>) answer;
 			displayJournal(journals, false);
@@ -242,7 +231,6 @@ public class Client {
 	private static void send(ObjectOutputStream out, Object obj) {
 		try {
 			out.writeObject(obj);
-			out.reset();
 			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
