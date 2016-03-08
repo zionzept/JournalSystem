@@ -244,7 +244,7 @@ public class Client {
 		panel.add(label);
 		panel.add(pass);
 		String[] options = new String[] { "OK" };
-		int option = JOptionPane.showOptionDialog(null, panel, "The title",
+		int option = JOptionPane.showOptionDialog(null, panel, "Password Prompt",
 				JOptionPane.NO_OPTION, JOptionPane.PLAIN_MESSAGE, null,
 				options, pass);
 		if (option != JOptionPane.CLOSED_OPTION) // pressing OK button
